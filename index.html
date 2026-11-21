@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Offer 对比计算器 · 税后总包 PK（2026）</title>
+<meta name="description" content="纯本地运行的多 Offer 税后对比工具：五险一金、个税、年终奖单独计税盲区提醒、公司实际成本。数据不出浏览器。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Crect%20x='12'%20y='45'%20width='20'%20height='40'%20rx='4'%20fill='%232b5cff'/%3E%3Crect%20x='40'%20y='25'%20width='20'%20height='60'%20rx='4'%20fill='%230a9d58'/%3E%3Crect%20x='68'%20y='55'%20width='20'%20height='30'%20rx='4'%20fill='%232b5cff'/%3E%3C/svg%3E">
+<meta property="og:title" content="Offer 对比计算器 · 税后总包 PK">
+<meta property="og:description" content="2-3 个 offer 并排算税后：五险一金、个税、年终奖盲区提醒、公司真实成本。纯本地计算，数据不出浏览器。">
+<meta property="og:type" content="website">
+<meta property="og:image" content="截图.png">
+<style>
+:root {
+  --bg: #f5f6f8; --card: #ffffff; --ink: #1a2233; --sub: #5b6474;
+  --brand: #2b5cff; --brand-weak: #e8eeff; --good: #0a9d58; --warn: #c7500a;
+  --line: #e3e6ec; --radius: 14px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg); color: var(--ink); line-height: 1.55; padding-bottom: 60px;
+}
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+header { padding: 28px 0 10px; }
+h1 { font-size: 24px; letter-spacing: 0.5px; }
+h1 .accent { color: var(--brand); }
+.tagline { color: var(--sub); margin-top: 6px; font-size: 14px; }
+.privacy {
+  margin-top: 12px; display: inline-block; background: var(--brand-weak); color: var(--brand);
+  font-size: 13px; padding: 4px 12px; border-radius: 999px;
+}
+h2 { font-size: 17px; margin: 26px 0 12px; }
+.offers { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+.card {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 16px; position: relative;
+}
+.card .remove {
+  position: absolute; top: 10px; right: 12px; border: none; background: none;
+  color: var(--sub); font-size: 16px; cursor: pointer; display: none;
+}
+.offers .card:nth-child(n+3) .remove { display: block; }
+.card h3 { font-size: 15px; margin-bottom: 10px; display: flex; gap: 8px; align-items: center; }
+.card h3 input {
+  width: 90px; border: none; border-bottom: 1.5px dashed var(--line); font-size: 15px;
+  font-weight: 600; color: var(--ink); background: none; padding: 2px 0;
+}
+.field { margin: 8px 0; }
+.field label { display: block; font-size: 12.5px; color: var(--sub); margin-bottom: 3px; }
+.field input, .field select {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+  font-size: 14.5px; background: #fbfcfe; color: var(--ink);
+}
+.field input:focus, .field select:focus { outline: 2px solid var(--brand-weak); border-color: var(--brand); }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+details.adv { margin-top: 10px; font-size: 13px; }
+details.adv summary { color: var(--sub); cursor: pointer; user-select: none; }
+details.adv .field { margin-top: 8px; }
+.btnbar { display: flex; gap: 10px; margin: 18px 0; flex-wrap: wrap; }
+button.primary {
+  background: var(--brand); color: #fff; border: none; border-radius: 10px;
+  padding: 11px 22px; font-size: 15px; font-weight: 600; cursor: pointer;
+}
+button.ghost {
+  background: var(--card); color: var(--brand); border: 1px solid var(--brand);
+  border-radius: 10px; padding: 11px 18px; font-size: 14px; cursor: pointer;
+}
+.result-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; margin-top: 6px; }
+.verdict { font-size: 15px; margin-bottom: 14px; }
+.verdict b { color: var(--good); }
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th, td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; white-space: normal; }
+th { color: var(--sub); font-weight: 500; font-size: 12.5px; }
+tr.best td { background: #f2fbf6; }
+tr.best td:first-child { border-left: 3px solid var(--good); padding-left: 7px; }
+.money { font-variant-numeric: tabular-nums; }
+.bar-wrap { margin-top: 16px; }
+.bar-row { margin: 10px 0; }
+.bar-label { display: flex; justify-content: space-between; font-size: 13px; color: var(--sub); margin-bottom: 4px; }
+.bar { height: 22px; background: var(--brand-weak); border-radius: 6px; overflow: hidden; }
+.bar > div { height: 100%; background: var(--brand); border-radius: 6px; min-width: 2px; }
+.bar-row.winner .bar > div { background: var(--good); }
+.warnbox {
+  margin-top: 14px; background: #fff7ef; border: 1px solid #f3d9bd; color: var(--warn);
+  border-radius: 10px; padding: 10px 14px; font-size: 13.5px;
+}
+.infobox {
+  margin-top: 14px; background: #f2fbf6; border: 1px solid #bfe6d2; color: var(--good);
+  border-radius: 10px; padding: 10px 14px; font-size: 13.5px;
+}
+.chart-note { font-size: 12.5px; color: var(--sub); margin: 4px 0 2px; }
+.assumptions { color: var(--sub); font-size: 12.5px; margin-top: 14px; }
+.assumptions a { color: var(--brand); }
+.copyline { margin-top: 12px; }
+textarea.share {
+  width: 100%; height: 84px; font-size: 12px; font-family: ui-monospace, monospace;
+  border: 1px solid var(--line); border-radius: 8px; padding: 8px; color: var(--sub);
+}
+footer { text-align: center; color: var(--sub); font-size: 12px; margin-top: 40px; }
+.zone-table td:first-child, .zone-table td:nth-child(2) { text-align: right; }
+.zone-note { font-size: 12.5px; color: var(--sub); margin-top: 8px; }
+.hidden { display: none; }
+@media (max-width: 640px) {
+  table { font-size: 12px; } th, td { padding: 6px 6px; }
+  h1 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Offer 对比计算器 <span class="accent">· 税后总包 PK</span></h1>
+    <div class="tagline">五险一金 · 个税 · 年终奖单独计税盲区 · 公司真实成本，一次算清。适配 12薪–16薪、签字费、RSU。</div>
+    <div class="privacy">🔒 数据只在你的浏览器里计算，不上传任何服务器</div>
+  </header>
+
+  <h2>填写你的 Offer（至少 2 个）</h2>
+  <div class="offers" id="offers"></div>
+  <div class="btnbar">
+    <button class="ghost" id="addOffer">＋ 加一个 Offer</button>
+    <button class="primary" id="calc">开始对比</button>
+    <button class="ghost" id="reset">恢复示例</button>
+  </div>
+
+  <div id="result" class="hidden">
+    <h2>对比结果</h2>
+    <div class="result-card">
+      <div class="verdict" id="verdict"></div>
+      <div class="bar-wrap" id="bars"></div>
+      <div style="overflow-x:auto">
+        <table id="detailTable"></table>
+      </div>
+      <div id="warnings"></div>
+      <h2 style="margin:18px 0 8px; font-size:14.5px;">累计到手现金流对比（1-12 月）</h2>
+      <div class="result-card" id="cashCompare"></div>
+      <h2 style="margin:18px 0 8px; font-size:14.5px;">逐月个税明细（累计预扣法）</h2>
+      <div id="monthlies"></div>
+      <div class="copyline">
+        <button class="ghost" id="copyBtn">复制对比结果（文本）</button>
+        <button class="ghost" id="shareLinkBtn">复制分享链接</button>
+      </div>
+      <textarea class="share hidden" id="shareText" readonly></textarea>
+      <div class="assumptions">
+        假设与口径：全年在职 12 个月；社保按 12 个月缴纳；RSU 按归属年度工资薪金计税；年终奖默认单独计税
+        （依据财政部、税务总局 2023 年第 30 号公告，政策延续至 2027 年 12 月 31 日）；专项附加扣除为你填写的月度合计×12。
+        各城市社保基数上下限每年 7 月左右调整，工具内数值可能滞后，请以当地人社局公布为准（可在"高级"中修改）。
+        本工具为估算，不构成税务建议。
+      </div>
+    </div>
+  </div>
+
+  <h2>年终奖单独计税"盲区"对照表</h2>
+  <div class="result-card">
+    <div style="overflow-x:auto"><table class="zone-table" id="zoneTable"></table></div>
+    <div class="zone-note">年终奖超过某个临界点但不远时，多发的部分会被更高的税率吃掉，税后反而更少。谈 offer 时，年终奖设在临界点上往往更划算（HR 通常知道这个坑）。</div>
+  </div>
+
+  <footer>
+    纯静态单文件工具 · 计算引擎有 17 组单元测试 · <span id="verline">税率与速算扣除数依据现行个人所得税法</span>
+    · <a href="../08_盲区速查/index.html" style="color:var(--sub)">年终奖盲区速查单页 →</a>
+  </footer>
+</div>
+
+<script>
+// ============================================================
+// 税薪计算引擎（Offer 对比核心逻辑）
+// 纯函数、无依赖，可被 Node 测试，也可内联进浏览器页面。
+//
+// 建模假设（页面会向用户说明）：
+//   - 全年在职 12 个月（年中入职的汇算差异不在本工具范围内）
+//   - 五险一金按 12 个月缴纳；months 仅表示"工资发放月数"（12薪/13薪/14薪）
+//   - RSU 股票按工资薪金累计计税；期权行权同理简化处理
+//
+// 常数标注规则：
+//   SRC: VERIFIED(<url>) —— 已核实到官方/可靠来源
+//   SRC: PENDING-VERIFY  —— 凭通识写入，发布前必须核实
+// ============================================================
+
+// ---- 个税综合所得年度税率表（2019 修法后至今未变） ----
+// SRC: VERIFIED 个人所得税法（总局法规库）https://fgk.chinatax.gov.cn/zcfgk/c100009/c5193028/content.html
+//      税率表官方 PDF（上海税务局）https://shanghai.chinatax.gov.cn/zcfw/zcfgk/grsds/202402/P020240202362406243753.pdf
+const ANNUAL_BRACKETS = [
+  { limit: 36000, rate: 0.03, quick: 0 },
+  { limit: 144000, rate: 0.10, quick: 2520 },
+  { limit: 300000, rate: 0.20, quick: 16920 },
+  { limit: 420000, rate: 0.25, quick: 31920 },
+  { limit: 660000, rate: 0.30, quick: 52920 },
+  { limit: 960000, rate: 0.35, quick: 85920 },
+  { limit: Infinity, rate: 0.45, quick: 181920 },
+];
+
+// ---- 按月换算税率表（全年一次性奖金单独计税专用） ----
+// SRC: VERIFIED 财政部 税务总局公告2023年第30号（执行至2027-12-31，公式"奖金×税率−速算扣除数"）
+//      https://fgk.chinatax.gov.cn/zcfgk/c102416/c5211524/content.html
+//      表值与公告附件"按月换算后的综合所得税率表"及多方官方口径一致
+const MONTHLY_BRACKETS = [
+  { limit: 3000, rate: 0.03, quick: 0 },
+  { limit: 12000, rate: 0.10, quick: 210 },
+  { limit: 25000, rate: 0.20, quick: 1410 },
+  { limit: 35000, rate: 0.25, quick: 2660 },
+  { limit: 55000, rate: 0.30, quick: 4410 },
+  { limit: 80000, rate: 0.35, quick: 7160 },
+  { limit: Infinity, rate: 0.45, quick: 15160 },
+];
+
+// 基本减除费用（起征点）：5000/月
+// SRC: VERIFIED 个人所得税法（同上法规库链接）
+const BASIC_DEDUCTION_ANNUAL = 60000;
+
+const round2 = (x) => Math.round(x * 100) / 100;
+const clamp = (x, lo, hi) => Math.min(Math.max(x, lo), hi);
+
+function bracketFor(brackets, amount) {
+  for (const b of brackets) if (amount <= b.limit) return b;
+  return brackets[brackets.length - 1];
+}
+
+/** 综合所得应纳税额（按年，速算扣除数法） */
+function annualIncomeTax(annualTaxable) {
+  const t = Math.max(0, annualTaxable);
+  const b = bracketFor(ANNUAL_BRACKETS, t);
+  return round2(t * b.rate - b.quick);
+}
+
+/** 全年一次性奖金单独计税应纳税额：奖金×按月换算税率−速算扣除数 */
+function bonusTaxSeparate(bonus) {
+  const b = Math.max(0, bonus);
+  if (b === 0) return 0;
+  const br = bracketFor(MONTHLY_BRACKETS, b / 12);
+  return round2(b * br.rate - br.quick);
+}
+
+/**
+ * 年终奖"盲区"检测：单独计税下奖金略超临界点（3000/12000/25000/35000/55000/80000 的×12）
+ * 时，税后到手反而低于临界点处。返回建议值。
+ * 推导：net(x) = x(1−r1)+q1 与 net(edge)=edge(1−r0)+q0 相等
+ *   → ceiling = [edge(1−r0)+q0−q1]/(1−r1)
+ * 经典验证：zone1 ceiling = (36000×0.97−210)/0.9 = 38,566.67 ✓；zone2 = 160,500 ✓
+ */
+function bonusBlindZone(bonus) {
+  const b = Math.max(0, bonus);
+  for (let i = 1; i < MONTHLY_BRACKETS.length; i++) {
+    const edge = MONTHLY_BRACKETS[i - 1].limit * 12;
+    const r0 = MONTHLY_BRACKETS[i - 1].rate;
+    const q0 = MONTHLY_BRACKETS[i - 1].quick;
+    const r1 = MONTHLY_BRACKETS[i].rate;
+    const q1 = MONTHLY_BRACKETS[i].quick;
+    const ceiling = round2((edge * (1 - r0) + q0 - q1) / (1 - r1));
+    if (b > edge && b < ceiling) {
+      const netAtEdge = edge * (1 - r0) + q0;
+      const netHere = b * (1 - r1) + q1;
+      return { inZone: true, edge, ceiling, suggest: edge, lost: round2(netAtEdge - netHere) };
+    }
+  }
+  return { inZone: false };
+}
+
+// ---- 城市五险一金参数 ----
+// 个人缴纳：养老/医疗/失业（工伤、生育个人不缴）；medicalFixedAdd 为固定小额附加（如北京大病3元/月）
+// 基数来源：
+//   上海 7546–37731（2026-07-01 起）：SRC: VERIFIED https://rsj.sh.gov.cn/tgsgg_17341/20260818/t0035_1443203.html
+//   北京 7270–36348（2026 年 7 月起，京人社发〔2026〕7号）：SRC: VERIFIED https://rsj.beijing.gov.cn/xxgk/tzgg/202608/t20260821_4831468.html
+//   深圳按养老口径 4775–27549（医疗 6727–33633、失业口径不同，工具内可在"高级"修改）：
+//     SRC: VERIFIED(本地宝汇总) https://m.bendibao.com/mip/bsy3352.html
+//   杭州（浙江省级统筹）4986–25299：SRC: VERIFIED(本地宝/杭州网) https://m.hz.bendibao.com/live/113816.shtm
+//   广州（养老口径 5510–27549，2025.7–2026.6；医疗 6234–31170 为 2026.1–12，工具按单一基数简化）：
+//     SRC: VERIFIED https://www.gz.gov.cn/zwfw/zxfw/sbfw/content/post_10510453.html
+//           https://guangdong.chinatax.gov.cn/gdsw/ssfggds/2025-10/27/content_ba2a20bf040648e089f9edf9f557fa2b.shtml
+//           广州单位医保费率 2026-01-01 起恢复 6%（含生育 0.85%）
+// 公积金基数上限：
+//   北京 36348（2026公积金年度）：SRC: VERIFIED https://www.beijing.gov.cn/zhengce/zhengcefagui/202608/t20260824_4834975.html
+//   上海 37302（2026年度暂按2025年度执行，沪公积金管委会〔2026〕3号）：SRC: VERIFIED(多源报道一致)
+//   其余城市：PENDING-VERIFY，可在"高级"修改（注意公积金基数与社保基数是两套体系，数值常不同）
+// 雇主侧医疗/失业/工伤比例：部分城市 PENDING-VERIFY（仅影响"公司成本"列，不影响到手）
+const CITIES = {
+  beijing: {
+    name: '北京',
+    personal: { pension: 0.08, medical: 0.02, medicalFixedAdd: 3, unemployment: 0.005 },
+    employer: { pension: 0.16, medical: 0.098, unemployment: 0.005, injury: 0.004 },
+    base: { lower: 7270, upper: 36348 },
+    hf: { defaultRate: 0.12, cap: 36348 },
+  },
+  shanghai: {
+    name: '上海',
+    personal: { pension: 0.08, medical: 0.02, medicalFixedAdd: 0, unemployment: 0.005 },
+    employer: { pension: 0.16, medical: 0.09, unemployment: 0.005, injury: 0.0026 },
+    base: { lower: 7546, upper: 37731 },
+    hf: { defaultRate: 0.07, cap: 37302 },
+  },
+  shenzhen: {
+    name: '深圳',
+    personal: { pension: 0.08, medical: 0.02, medicalFixedAdd: 0, unemployment: 0.003 },
+    employer: { pension: 0.15, medical: 0.05, unemployment: 0.003, injury: 0.0014 },
+    base: { lower: 4775, upper: 27549 },
+    hf: { defaultRate: 0.05, cap: 27549 },
+  },
+  hangzhou: {
+    name: '杭州',
+    personal: { pension: 0.08, medical: 0.02, medicalFixedAdd: 0, unemployment: 0.005 },
+    employer: { pension: 0.16, medical: 0.099, unemployment: 0.005, injury: 0.002 },
+    base: { lower: 4986, upper: 25299 },
+    hf: { defaultRate: 0.12, cap: 25299 },
+  },
+  guangzhou: {
+    name: '广州',
+    personal: { pension: 0.08, medical: 0.02, medicalFixedAdd: 0, unemployment: 0.002 },
+    employer: { pension: 0.16, medical: 0.0685, unemployment: 0.002, injury: 0.002 },
+    base: { lower: 5510, upper: 27549 },
+    hf: { defaultRate: 0.05, cap: 27549 },
+  },
+  chengdu: {
+    // 四川省级统筹 2026 年度（养老/失业/工伤）：SRC: VERIFIED(多源媒体一致，川人社办发〔2025〕39号)
+    // https://cbgc.scol.com.cn/news/7932031 ；医保基数可能另有标准，可在"高级"修改
+    name: '成都',
+    personal: { pension: 0.08, medical: 0.02, medicalFixedAdd: 0, unemployment: 0.005 },
+    employer: { pension: 0.16, medical: 0.069, unemployment: 0.005, injury: 0.002 },
+    base: { lower: 4699, upper: 23493 },
+    hf: { defaultRate: 0.06, cap: 23493 },
+  },
+  wuhan: {
+    // 湖北第1档（武汉市和省直）：2026 年度暂按 2025 标准执行（4498–22488）
+    // SRC: VERIFIED https://www.wuhan.gov.cn/zwgk/tzgg/202509/t20250922_2650944.shtml
+    //      https://m12333.cn/qa/swsap.html （2026 年度申报口径）
+    name: '武汉',
+    personal: { pension: 0.08, medical: 0.02, medicalFixedAdd: 0, unemployment: 0.005 },
+    employer: { pension: 0.16, medical: 0.08, unemployment: 0.005, injury: 0.002 },
+    base: { lower: 4498, upper: 22488 },
+    hf: { defaultRate: 0.08, cap: 22488 },
+  },
+  nanjing: {
+    // 江苏（南京）：2026 新标准待发布，暂沿用 2025 标准 4952–24762
+    // SRC: VERIFIED(多源) https://view.inews.qq.com/a/20260701A0A5B200
+    //      https://m.nj.bendibao.com/live/137164.shtm ；江苏税务申报通知 jiangsu.chinatax.gov.cn
+    name: '南京',
+    personal: { pension: 0.08, medical: 0.02, medicalFixedAdd: 0, unemployment: 0.005 },
+    employer: { pension: 0.16, medical: 0.08, unemployment: 0.005, injury: 0.002 },
+    base: { lower: 4952, upper: 24762 },
+    hf: { defaultRate: 0.08, cap: 24762 },
+  },
+  xian: {
+    // 陕西省级统筹 2026 年度（养老/失业/工伤，2026-09-01 公布）：SRC: VERIFIED(多源媒体一致)
+    // https://sx.sina.cn/news/xian/2026-09-01/detail-iniqiaty1629061.d.html
+    // 医保口径可能另有标准，可在"高级"修改；公积金上限 PENDING-VERIFY
+    name: '西安',
+    personal: { pension: 0.08, medical: 0.02, medicalFixedAdd: 0, unemployment: 0.005 },
+    employer: { pension: 0.16, medical: 0.08, unemployment: 0.005, injury: 0.002 },
+    base: { lower: 4737, upper: 23685 },
+    hf: { defaultRate: 0.08, cap: 23685 },
+  },
+  tianjin: {
+    // 天津 2026 年度（五险统一口径，2026-09-01 起）：SRC: VERIFIED(多源)
+    // 津人社局发〔2026〕5号 https://www.shui5.cn/article/9c/193309.html ；人社通 https://m12333.cn/qa/sifdb.html
+    // 雇主侧医保/失业/工伤比例 PENDING-VERIFY（仅影响"公司成本"列）
+    name: '天津',
+    personal: { pension: 0.08, medical: 0.02, medicalFixedAdd: 0, unemployment: 0.005 },
+    employer: { pension: 0.16, medical: 0.08, unemployment: 0.005, injury: 0.002 },
+    base: { lower: 5180, upper: 25902 },
+    hf: { defaultRate: 0.08, cap: 25902 },
+  },
+  changsha: {
+    // 湖南省级统筹 2026 年度（养老/失业/工伤，基准值 6843，2026.1-12）：SRC: VERIFIED(多源)
+    // https://hunan.voc.com.cn/news/202608/33553945.html ；医保口径可能另有标准
+    name: '长沙',
+    personal: { pension: 0.08, medical: 0.02, medicalFixedAdd: 0, unemployment: 0.005 },
+    employer: { pension: 0.16, medical: 0.08, unemployment: 0.005, injury: 0.002 },
+    base: { lower: 4106, upper: 20529 },
+    hf: { defaultRate: 0.08, cap: 20529 },
+  },
+  hefei: {
+    // 安徽省级统筹 2026 全年（皖人社秘〔2026〕113号，省人社厅 9-4 发布）：SRC: VERIFIED(官网+媒体一致)
+    // 医保口径未单独核实；公积金上限 PENDING-VERIFY
+    name: '合肥',
+    personal: { pension: 0.08, medical: 0.02, medicalFixedAdd: 0, unemployment: 0.005 },
+    employer: { pension: 0.16, medical: 0.08, unemployment: 0.005, injury: 0.002 },
+    base: { lower: 4354, upper: 21772 },
+    hf: { defaultRate: 0.08, cap: 21772 },
+  },
+  jinan: {
+    // 山东省级统筹 2026 年度（鲁人社字〔2026〕75号，8-21 发布，五险统一）：SRC: VERIFIED(多源)
+    name: '济南',
+    personal: { pension: 0.08, medical: 0.02, medicalFixedAdd: 0, unemployment: 0.005 },
+    employer: { pension: 0.16, medical: 0.08, unemployment: 0.005, injury: 0.002 },
+    base: { lower: 4573, upper: 22863 },
+    hf: { defaultRate: 0.08, cap: 22863 },
+  },
+  other: {
+    name: '其他城市（自定义）',
+    personal: { pension: 0.08, medical: 0.02, medicalFixedAdd: 0, unemployment: 0.005 },
+    employer: { pension: 0.16, medical: 0.08, unemployment: 0.005, injury: 0.002 },
+    base: { lower: 4000, upper: 30000 },
+    hf: { defaultRate: 0.12, cap: 30000 },
+  },
+};
+
+/** 解析城市与基数/缴存参数（evaluateOffer 与 monthlySchedule 共用） */
+function resolveParams(input) {
+  const city = CITIES[input.cityKey] || CITIES.other;
+  const months = clamp(input.months || 12, 1, 24);
+  const declaredBase = input.socialBaseOverride ?? input.monthlySalary;
+  const socialBase = clamp(declaredBase, city.base.lower, city.base.upper);
+  const hfBase = clamp(input.hfBaseOverride ?? input.monthlySalary, 0, city.hf.cap);
+  const hfRate = clamp(input.hfRate ?? city.hf.defaultRate, 0, 0.12);
+  const p = city.personal;
+  const personalSI = round2(
+    socialBase * (p.pension + p.medical + p.unemployment) + p.medicalFixedAdd
+  );
+  const personalHF = round2(hfBase * hfRate);
+  // 税前可扣除口径：五险一金个人实缴（3元大病固定附加不可扣，金额影响极小，注释说明）
+  const personalMonthlyDeduct = round2(personalSI - p.medicalFixedAdd + personalHF);
+  return { city, months, socialBase, hfBase, hfRate, personalSI, personalHF, personalMonthlyDeduct };
+}
+
+/**
+ * Offer 输入：
+ * { label, cityKey, monthlySalary, months(12-16), annualBonus, signOn, annualStock,
+ *   hfRate(0.05-0.12), socialBaseOverride?, hfBaseOverride?,
+ *   specialDeductionMonthly(专项附加扣除合计/月), bonusSeparate(bool,默认true) }
+ */
+function evaluateOffer(input) {
+  const { city, months, socialBase, hfBase, hfRate, personalSI, personalHF, personalMonthlyDeduct } =
+    resolveParams(input);
+
+  // 收入类输入统一钳制非负（库函数防御：UI 之外的调用方可能传负数）
+  const monthlySalary = Math.max(0, input.monthlySalary || 0);
+  const annualBonus = Math.max(0, input.annualBonus || 0);
+  const signOn = Math.max(0, input.signOn || 0);
+  const annualStock = Math.max(0, input.annualStock || 0);
+  const specialDeduction = Math.max(0, input.specialDeductionMonthly || 0);
+
+  const salaryAnnual = round2(monthlySalary * months);
+  const grossAnnual = round2(salaryAnnual + annualBonus + signOn + annualStock);
+
+  // 工资侧应纳税所得额：工资+签字费+股票 − 6万 − 五险一金个人(12个月) − 专项附加(12个月)
+  const salaryTaxableBase =
+    salaryAnnual + signOn + annualStock -
+    BASIC_DEDUCTION_ANNUAL -
+    personalMonthlyDeduct * 12 -
+    specialDeduction * 12;
+
+  const bonus = annualBonus;
+  let taxSalary, taxBonus = 0, bonusMode;
+  if (input.bonusSeparate === false || bonus === 0) {
+    taxSalary = annualIncomeTax(salaryTaxableBase + bonus);
+    bonusMode = bonus === 0 ? '无年终奖' : '并入综合所得';
+  } else {
+    taxSalary = annualIncomeTax(salaryTaxableBase);
+    taxBonus = bonusTaxSeparate(bonus);
+    bonusMode = '单独计税';
+  }
+
+  const personalTotal = round2((personalSI + personalHF) * 12);
+  const netAnnual = round2(grossAnnual - personalTotal - taxSalary - taxBonus);
+  const netMonthlyAvg = round2(netAnnual / 12);
+
+  const e = city.employer;
+  const employerSI = round2(socialBase * (e.pension + e.medical + e.unemployment + e.injury));
+  const employerHF = round2(hfBase * hfRate);
+  const employerCostAnnual = round2(grossAnnual + (employerSI + employerHF) * 12);
+
+  const bz = bonus > 0 && bonusMode === '单独计税' ? bonusBlindZone(bonus) : { inZone: false };
+
+  return {
+    label: input.label,
+    cityName: city.name,
+    months,
+    socialBase, hfBase, hfRate,
+    personalSI, personalHF,
+    personalMonthlyDeduct,
+    salaryAnnual, grossAnnual,
+    taxableSalaryPart: Math.max(0, round2(salaryTaxableBase)),
+    taxSalary, taxBonus, bonusMode,
+    personalTotal, netAnnual, netMonthlyAvg,
+    employerMonthlyCost: round2(employerSI + employerHF),
+    employerCostAnnual,
+    blindZone: bz,
+  };
+}
+
+/** 多 offer 对比：按税后年总包降序 */
+function compareOffers(inputs) {
+  return inputs.map(evaluateOffer).sort((a, b) => b.netAnnual - a.netAnnual);
+}
+
+/**
+ * 逐月累计预扣明细（工资薪金累计预扣法）
+ * 假设：1-12月每月工资相等；months>12 时超出部分（13薪等）计入12月发放；
+ * 签字费计入1月；RSU 按季度（3/6/9/12月）平均归属。
+ * 年终奖：单独计税时在12月单列 bonusTax；并入综合所得时把奖金并入12月工资侧税基
+ *（保证 Σtax === evaluateOffer 的 taxSalary，两种模式口径一致）。
+ * 返回 { rows: [{month, gross, cumTaxable, cumTax, tax, bonusTax}], totals: {taxSum, bonusTax} }
+ */
+function monthlySchedule(input) {
+  const { months, personalMonthlyDeduct } = resolveParams(input);
+  const special = input.specialDeductionMonthly || 0;
+  const extraMonths = Math.max(0, months - 12);
+  const decExtra = extraMonths * input.monthlySalary;
+  const perQuarterRSU = (input.annualStock || 0) / 4;
+  const rsuMonths = [3, 6, 9, 12];
+  const bonus = input.annualBonus || 0;
+  const merged = bonus > 0 && input.bonusSeparate === false;
+
+  const rows = [];
+  let cumTaxable = 0;
+  let cumTax = 0;
+  for (let m = 1; m <= 12; m++) {
+    let gross = m <= months ? input.monthlySalary : 0;
+    if (m === 1) gross += input.signOn || 0;
+    if (rsuMonths.includes(m)) gross += perQuarterRSU;
+    if (m === 12) gross += decExtra + (merged ? bonus : 0);
+
+    cumTaxable = cumTaxable + gross - 5000 - personalMonthlyDeduct - special;
+    const newCumTax = annualIncomeTax(cumTaxable);
+    const tax = round2(newCumTax - cumTax);
+    cumTax = newCumTax;
+    rows.push({
+      month: m,
+      gross: round2(gross),
+      cumTaxable: Math.max(0, round2(cumTaxable)),
+      cumTax: round2(cumTax),
+      tax,
+      bonusTax: 0,
+    });
+  }
+  if (bonus > 0 && !merged) {
+    rows[11].bonusTax = bonusTaxSeparate(bonus);
+  }
+  return {
+    rows,
+    totals: { taxSum: round2(cumTax), bonusTax: rows[11].bonusTax },
+  };
+}
+
+
+</script>
+<script>
+"use strict";
+/* ---------------- UI 状态 ---------------- */
+const CITY_KEYS = Object.keys(CITIES);
+const DEFAULT_OFFERS = [
+  { label: "Offer A", cityKey: "shanghai", monthlySalary: 30000, months: 12, annualBonus: 60000, signOn: 0, annualStock: 0, hfRate: 0.07, specialDeductionMonthly: 3000, bonusSeparate: true },
+  { label: "Offer B", cityKey: "beijing", monthlySalary: 32000, months: 13, annualBonus: 0, signOn: 20000, annualStock: 0, hfRate: 0.12, specialDeductionMonthly: 3000, bonusSeparate: true },
+];
+function save() { try { localStorage.setItem("offerCompare.v1", JSON.stringify(offers)); } catch (e) {} }
+function load() { try { const s = localStorage.getItem("offerCompare.v1"); const arr = s ? JSON.parse(s) : null; return Array.isArray(arr) ? arr.map(sanitizeOffer) : null; } catch (e) { return null; } }
+// 白名单清洗：字段白名单 + 类型钳制，防恶意分享链接/localStorage 注入
+function sanitizeOffer(o) {
+  if (!o || typeof o !== "object") return null;
+  const num = (v, d) => { const n = Number(v); return Number.isFinite(n) ? n : d; };
+  const nonNeg = (v, d) => Math.max(0, num(v, d));
+  return {
+    label: String(o.label ?? "").slice(0, 30),
+    cityKey: CITY_KEYS.includes(o.cityKey) ? o.cityKey : "shanghai",
+    monthlySalary: nonNeg(o.monthlySalary, 0),
+    months: Math.min(24, Math.max(1, Math.round(num(o.months, 12)))) || 12,
+    annualBonus: nonNeg(o.annualBonus, 0),
+    signOn: nonNeg(o.signOn, 0),
+    annualStock: nonNeg(o.annualStock, 0),
+    hfRate: Math.min(0.12, Math.max(0, num(o.hfRate, CITIES[o.cityKey] ? 0.07 : 0.07))),
+    specialDeductionMonthly: nonNeg(o.specialDeductionMonthly, 0),
+    bonusSeparate: o.bonusSeparate !== false,
+    baseLower: num(o.baseLower, 0) || undefined,
+    baseUpper: num(o.baseUpper, 0) || undefined,
+    hfCap: num(o.hfCap, 0) || undefined,
+  };
+}
+// 分享链接：offer 数组 → base64url 放入 location.hash（无服务器参与，仍满足"数据不出浏览器"）
+function encodeOffers(list) { return btoa(encodeURIComponent(JSON.stringify(list))); }
+function decodeOffers(str) {
+  try {
+    const arr = JSON.parse(decodeURIComponent(atob(str)));
+    if (!Array.isArray(arr) || arr.length < 2 || arr.length > 3) return null;
+    const cleaned = arr.map(sanitizeOffer).filter(Boolean);
+    return cleaned.length >= 2 ? cleaned : null;
+  } catch (e) { return null; }
+}
+let offers;
+(function initOffers() {
+  const m = location.hash.match(/#d=([^&]+)/);
+  const fromHash = m ? decodeOffers(m[1]) : null;
+  offers = fromHash || load() || JSON.parse(JSON.stringify(DEFAULT_OFFERS));
+})();
+
+function money(n) { return n.toLocaleString("zh-CN", { maximumFractionDigits: 0 }); }
+
+// 累计到手现金流曲线（纯 SVG，无图表库）
+function cashChartSVG(r) {
+  const pf = r.personalTotal / 12; // 每月个人五险一金+公积金
+  let cum = 0;
+  const pts = r.schedule.rows.map((x, i) => {
+    // 年终奖现金：单独计税时 12 月发奖金扣 bonusTax；并入模式下奖金已在 gross 里
+    const bonusCash = (i === 11 && r.bonusMode === "单独计税") ? r.inputBonus : 0;
+    cum += x.gross + bonusCash - x.tax - x.bonusTax - pf;
+    return Math.max(0, cum);
+  });
+  const W = 700, H = 190, PL = 64, PR = 20, PT = 16, PB = 26;
+  const max = Math.max(...pts, 1);
+  const px = i => PL + i * (W - PL - PR) / 11;
+  const py = v => H - PB - (v / max) * (H - PT - PB);
+  const line = pts.map((v, i) => px(i).toFixed(1) + "," + py(v).toFixed(1)).join(" ");
+  const area = `M${px(0).toFixed(1)},${py(0).toFixed(1)} L` + line.split(" ").join(" L") + ` L${px(11).toFixed(1)},${py(0).toFixed(1)} Z`;
+  const dots = pts.map((v, i) => `<circle cx="${px(i).toFixed(1)}" cy="${py(v).toFixed(1)}" r="3" style="fill:var(--brand)"/>`).join("");
+  const endLabel = `累计到手 ${money(pts[11])} 元`;
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto" role="img" aria-label="${esc(r.label)} 累计到手现金流曲线">
+    <path d="${area}" style="fill:var(--brand-weak)"/>
+    <polyline points="${line}" style="fill:none;stroke:var(--brand);stroke-width:2"/>
+    ${dots}
+    <line x1="${PL}" y1="${py(0)}" x2="${W-PR}" y2="${py(0)}" style="stroke:var(--line)"/>
+    <text x="${px(0)}" y="${H-8}" font-size="11" style="fill:var(--sub)">1月</text>
+    <text x="${px(5)}" y="${H-8}" font-size="11" style="fill:var(--sub)" text-anchor="middle">6月</text>
+    <text x="${px(11)}" y="${H-8}" font-size="11" style="fill:var(--sub)" text-anchor="end">12月</text>
+    <text x="${W-PR}" y="${py(pts[11]) - 8}" font-size="12" style="fill:var(--ink)" text-anchor="end">${endLabel}</text>
+  </svg>`;
+}
+
+/* ---------------- 渲染输入卡片 ---------------- */
+function renderOffers() {
+  const box = document.getElementById("offers");
+  box.innerHTML = "";
+  offers.forEach((o, i) => {
+    const card = document.createElement("div");
+    card.className = "card";
+    const hfPct = Math.round((o.hfRate ?? CITIES[o.cityKey].hf.defaultRate) * 100);
+    card.innerHTML = `
+      <button class="remove" title="删除此 Offer" data-i="${i}">✕</button>
+      <h3><input data-k="label" data-i="${i}" value="${esc(o.label || ("Offer " + "ABC"[i]))}"></h3>
+      <div class="row2">
+        <div class="field"><label>城市</label>
+          <select data-k="cityKey" data-i="${i}">${CITY_KEYS.map(k => `<option value="${k}" ${k===o.cityKey?"selected":""}>${CITIES[k].name}</option>`).join("")}</select>
+        </div>
+        <div class="field"><label>税前月薪（元）</label>
+          <input type="number" data-k="monthlySalary" data-i="${i}" value="${esc(o.monthlySalary)}" min="0" step="500">
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>工资月数</label>
+          <select data-k="months" data-i="${i}">${[12,13,14,15,16].map(m => `<option value="${m}" ${m===o.months?"selected":""}>${m} 薪</option>`).join("")}</select>
+        </div>
+        <div class="field"><label>年终奖（元，税前）</label>
+          <input type="number" data-k="annualBonus" data-i="${i}" value="${esc(o.annualBonus||0)}" min="0" step="5000">
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>签字费（元）</label>
+          <input type="number" data-k="signOn" data-i="${i}" value="${esc(o.signOn||0)}" min="0" step="5000">
+        </div>
+        <div class="field"><label>年股票/期权价值（元）</label>
+          <input type="number" data-k="annualStock" data-i="${i}" value="${esc(o.annualStock||0)}" min="0" step="50000">
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>公积金比例</label>
+          <select data-k="hfRate" data-i="${i}">${[5,7,8,12].map(r => `<option value="${r}" ${r===hfPct?"selected":""}>${r}%</option>`).join("")}</select>
+        </div>
+        <div class="field"><label>专项附加扣除合计/月（元）</label>
+          <input type="number" data-k="specialDeductionMonthly" data-i="${i}" value="${esc(o.specialDeductionMonthly||0)}" min="0" step="500">
+          <div class="zone-note">参考（国发〔2023〕13号，现行标准）：子女教育 2000/孩、3岁以下婴幼儿 2000/孩、赡养老人 3000（独生）/分摊≤1500、房贷利息 1000、住房租金 1500–800、继续教育 400。</div>
+        </div>
+      </div>
+      <details class="adv">
+        <summary>高级：基数与计税方式</summary>
+        <div class="row2">
+          <div class="field"><label>社保基数下限（元/月）</label>
+            <input type="number" data-k="baseLower" data-i="${i}" value="${esc(o.baseLower ?? CITIES[o.cityKey].base.lower)}" min="0">
+          </div>
+          <div class="field"><label>社保基数上限（元/月）</label>
+            <input type="number" data-k="baseUpper" data-i="${i}" value="${esc(o.baseUpper ?? CITIES[o.cityKey].base.upper)}" min="0">
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>公积金基数上限（元/月）</label>
+            <input type="number" data-k="hfCap" data-i="${i}" value="${esc(o.hfCap ?? CITIES[o.cityKey].hf.cap)}" min="0">
+          </div>
+          <div class="field"><label>年终奖计税</label>
+            <select data-k="bonusSeparate" data-i="${i}">
+              <option value="1" ${o.bonusSeparate!==false?"selected":""}>单独计税（推荐）</option>
+              <option value="0" ${o.bonusSeparate===false?"selected":""}>并入综合所得</option>
+            </select>
+          </div>
+        </div>
+        <div class="zone-note" style="margin-top:4px">基数上下限随每年 7 月调整，请以当地人社局最新公布为准。</div>
+      </details>`;
+    box.appendChild(card);
+  });
+  // 可访问性：把每个字段的 label 和控件程序化关联（for/id）
+  box.querySelectorAll(".field").forEach((f, idx) => {
+    const label = f.querySelector("label");
+    const control = f.querySelector("input,select");
+    if (label && control && !control.id) {
+      control.id = `field-${idx}-${(control.dataset.k || "x")}`;
+      label.setAttribute("for", control.id);
+    }
+  });
+  box.querySelectorAll("input,select").forEach(el => {
+    el.addEventListener("change", () => {
+      const i = +el.dataset.i, k = el.dataset.k;
+      let v = el.value;
+      if (k === "baseLower") { offers[i].baseLower = +v; }
+      else if (k === "baseUpper") { offers[i].baseUpper = +v; }
+      else if (k === "hfCap") { offers[i].hfCap = +v; }
+      else if (k === "bonusSeparate") { offers[i].bonusSeparate = v === "1"; }
+      else if (k === "hfRate") { offers[i].hfRate = (+v) / 100; }
+      else if (k === "months") { offers[i].months = +v; }
+      else if (["monthlySalary","annualBonus","signOn","annualStock","specialDeductionMonthly"].includes(k)) { offers[i][k] = +v || 0; }
+      else { offers[i][k] = v; }
+      save();
+    });
+  });
+  box.querySelectorAll(".remove").forEach(btn => btn.addEventListener("click", () => {
+    offers.splice(+btn.dataset.i, 1); save(); renderOffers();
+  }));
+}
+function esc(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;"); }
+
+/* ---------------- 计算 & 渲染结果 ---------------- */
+function toEngineInput(o) {
+  const city = CITIES[o.cityKey] || CITIES.other;
+  return {
+    label: o.label, cityKey: o.cityKey,
+    monthlySalary: o.monthlySalary, months: o.months,
+    annualBonus: o.annualBonus || 0, signOn: o.signOn || 0, annualStock: o.annualStock || 0,
+    hfRate: o.hfRate, specialDeductionMonthly: o.specialDeductionMonthly || 0,
+    bonusSeparate: o.bonusSeparate !== false,
+    // 高级覆盖：临时替换城市参数
+    _overrides: {
+      lower: o.baseLower ?? city.base.lower,
+      upper: o.baseUpper ?? city.base.upper,
+      hfCap: o.hfCap ?? city.hf.cap,
+    },
+  };
+}
+
+// 带覆盖参数的求值：直接改写 CITIES 再还原（单线程 UI，安全）
+function evaluateWithOverrides(input) {
+  const city = CITIES[input.cityKey] || CITIES.other;
+  const bak = JSON.stringify(city);
+  city.base.lower = input._overrides.lower;
+  city.base.upper = input._overrides.upper;
+  city.hf.cap = input._overrides.hfCap;
+  const r = evaluateOffer(input);
+  r.schedule = monthlySchedule(input);
+  Object.assign(city, JSON.parse(bak));
+  r.inputBonus = input.annualBonus || 0;
+  return r;
+}
+
+const SERIES_COLORS = ["#2b5cff", "#0a9d58", "#e07b00"];
+
+// 多 offer 累计到手现金流对比曲线（纯 SVG）
+function comparisonCashflowSVG(results) {
+  const W = 720, H = 260, PL = 64, PR = 20, PT = 18, PB = 30;
+  const series = results.map(r => {
+    const pf = r.personalTotal / 12;
+    let cum = 0;
+    const pts = r.schedule.rows.map((x, i) => {
+      cum += x.gross + (i === 11 ? (r.inputBonus || 0) : 0) - x.tax - x.bonusTax - pf;
+      return Math.max(0, cum);
+    });
+    return { r, pts };
+  });
+  const max = Math.max(...series.flatMap(s => s.pts), 1);
+  const px = m => PL + m * (W - PL - PR) / 11;
+  const py = v => H - PB - (v / max) * (H - PT - PB);
+  const lines = series.map((s, idx) => {
+    const pts = s.pts.map((v, m) => `${px(m).toFixed(1)},${py(v).toFixed(1)}`).join(" ");
+    return `<polyline points="${pts}" fill="none" stroke="${SERIES_COLORS[idx % 3]}" stroke-width="2.5"/>`;
+  }).join("");
+  const legend = series.map((s, idx) =>
+    `<span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--sub)">
+      <span style="width:14px;height:4px;border-radius:2px;background:${SERIES_COLORS[idx % 3]}"></span>${esc(s.r.label)}</span>`).join(" ");
+  const monthTicks = [0, 5, 11].map(m =>
+    `<text x="${px(m)}" y="${H - 10}" font-size="11" fill="var(--sub)" text-anchor="${m === 0 ? "start" : m === 11 ? "end" : "middle"}">${m + 1}月</text>`).join("");
+  const yTicks = [0.25, 0.5, 0.75, 1].map(f => {
+    const v = max * f;
+    return `<text x="${PL - 6}" y="${py(v) + 4}" font-size="11" fill="var(--sub)" text-anchor="end">${(v / 10000).toFixed(0)}万</text>
+            <line x1="${PL}" y1="${py(v)}" x2="${W - PR}" y2="${py(v)}" stroke="var(--line)" stroke-width="0.6"/>`;
+  }).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto" role="img" aria-label="累计到手现金流对比">
+    <line x1="${PL}" y1="${py(0)}" x2="${W - PR}" y2="${py(0)}" stroke="var(--line)"/>
+    ${yTicks}${lines}${monthTicks}
+  </svg>
+  <div style="margin-top:4px">${legend}</div>`;
+}
+
+// 交叉点洞察：谁在第几个月累计反超谁
+function crossoverInsights(results) {
+  const insights = [];
+  for (let i = 0; i < results.length; i++) {
+    for (let j = i + 1; j < results.length; j++) {
+      const A = results[i], B = results[j];
+      const diff = A.schedule.rows.map((x, m) =>
+        (x.gross + (m === 11 ? (A.inputBonus || 0) : 0) - x.tax - x.bonusTax) -
+        (B.schedule.rows[m].gross + (m === 11 ? (B.inputBonus || 0) : 0) - B.schedule.rows[m].tax - B.schedule.rows[m].bonusTax));
+      for (let m = 1; m < 12; m++) {
+        if (Math.sign(diff[m - 1]) !== Math.sign(diff[m]) && diff[m - 1] !== 0) {
+          const winner = diff[m] > 0 ? A : B;
+          insights.push(`到 ${m + 1} 月，<b>${esc(winner.label)}</b> 的累计到手反超了 ${diff[m] > 0 ? esc(B.label) : esc(A.label)}`);
+          break;
+        }
+      }
+    }
+  }
+  return insights;
+}
+
+function calc() {
+  if (offers.length < 2) { alert("至少需要 2 个 Offer 才能对比"); return; }
+  const results = offers.map(o => {
+    const inp = toEngineInput(o);
+    const r = evaluateWithOverrides(inp);
+    // 计税方式择优建议：安静地算另一种方式，若更优则提示（仍按用户选择展示数字）
+    if ((inp.annualBonus || 0) > 0) {
+      const alt = evaluateWithOverrides({ ...inp, bonusSeparate: !inp.bonusSeparate });
+      r.bonusAdvice = {
+        better: alt.netAnnual > r.netAnnual + 1,
+        delta: Math.round((alt.netAnnual - r.netAnnual) * 100) / 100,
+        altLabel: inp.bonusSeparate ? "并入综合所得" : "单独计税",
+      };
+    }
+    return r;
+  }).sort((a, b) => b.netAnnual - a.netAnnual);
+  const best = results[0], worst = results[results.length - 1];
+
+  document.getElementById("result").classList.remove("hidden");
+
+  const gap = best.netAnnual - worst.netAnnual;
+  document.getElementById("verdict").innerHTML =
+    `🏆 <b>${esc(best.label)}</b>（${best.cityName}）税后年总包最高：<b class="money">${money(best.netAnnual)}</b> 元，` +
+    `平均每月到手约 <b class="money">${money(best.netMonthlyAvg)}</b> 元` +
+    (gap > 0 ? `，比最低的 ${esc(worst.label)} 多 <b class="money">${money(gap)}</b> 元/年。` : "。") +
+    `<br><span style="color:var(--sub);font-size:12.5px">注意：公积金个人+公司缴存部分进入你的公积金账户，长期也是钱；公司实际成本列供谈判参考。</span>`;
+
+  const maxNet = Math.max(...results.map(r => r.netAnnual));
+  document.getElementById("bars").innerHTML = results.map(r => `
+    <div class="bar-row ${r === best ? "winner" : ""}">
+      <div class="bar-label"><span>${esc(r.label)} · ${r.cityName} · ${r.months}薪</span><span class="money">税后年总包 ${money(r.netAnnual)} 元</span></div>
+      <div class="bar"><div style="width:${Math.max(2, r.netAnnual / maxNet * 100)}%"></div></div>
+    </div>`).join("");
+
+  const rows = [
+    ["税前月工资", r => money(r.salaryAnnual / r.months) + " × " + r.months],
+    ["税前年总包（含奖/签/股）", r => `<b class="money">${money(r.grossAnnual)}</b>`],
+    ["五险一金+公积金 个人缴存/年", r => money(r.personalTotal)],
+    ["个税（工资侧）", r => money(r.taxSalary)],
+    ["个税（年终奖单独计税）", r => r.taxBonus ? money(r.taxBonus) : "—"],
+    ["税后年总包", r => `<b class="money">${money(r.netAnnual)}</b>`],
+    ["税后年总包 + 双边公积金", r => `<span class="money">${money(r.netAnnual + r.hfBase * r.hfRate * 2 * 12)}</span>（公积金也是个账户）`],
+    ["平均月到手", r => money(r.netMonthlyAvg)],
+    ["公司实际成本/年", r => money(r.employerCostAnnual)],
+    ["社保缴纳基数", r => money(r.socialBase)],
+    ["年终奖计税方式", r => r.bonusMode],
+  ];
+  document.getElementById("detailTable").innerHTML =
+    `<tr><th>项目</th>${results.map(r => `<th>${esc(r.label)}</th>`).join("")}</tr>` +
+    rows.map(([name, fn]) =>
+      `<tr class="${name === "税后年总包" ? "best" : ""}"><td>${name}</td>${results.map(r => `<td class="money">${fn(r)}</td>`).join("")}</tr>`
+    ).join("");
+
+  const warns = [];
+  results.forEach(r => {
+    if (r.blindZone && r.blindZone.inZone) {
+      warns.push(`⚠️ <b>${esc(r.label)}</b> 的年终奖 ${money(r.inputBonus)} 元落在盲区（${money(r.blindZone.edge)}–${money(r.blindZone.ceiling)} 元）：` +
+        `若改为 ${money(r.blindZone.suggest)} 元，税后反而多 ${money(r.blindZone.lost)} 元。可和 HR 谈整，或部分并入工资。`);
+    }
+  });
+  document.getElementById("warnings").innerHTML =
+    warns.map(w => `<div class="warnbox">${w}</div>`).join("") +
+    results.filter(r => r.bonusAdvice && r.bonusAdvice.better)
+      .map(r => `<div class="infobox">💡 <b>${esc(r.label)}</b>：若年终奖改为「${r.bonusAdvice.altLabel}」，税后年总包可多 <b class="money">${money(r.bonusAdvice.delta)}</b> 元。当前数字仍按你选择的方式计算。</div>`)
+      .join("");
+
+  // 累计现金流对比 + 交叉洞察
+  document.getElementById("cashCompare").innerHTML = comparisonCashflowSVG(results) +
+    `<div class="chart-note">曲线越陡的月份现金到账越多（12 月含年终奖/双薪）。曲线交叉点即"反超时刻"。</div>` +
+    (crossoverInsights(results).length
+      ? `<div class="zone-note" style="margin-top:6px">⚡ ${crossoverInsights(results).join("；")}</div>`
+      : "");
+
+  // 逐月明细（每个 offer 一个可折叠表 + 累计到手现金流曲线）
+  document.getElementById("monthlies").innerHTML = results.map(r => {
+    const rows = r.schedule.rows.map(x => `<tr>
+      <td>${x.month}月</td><td class="money">${money(x.gross)}</td>
+      <td class="money">${money(x.cumTaxable)}</td><td class="money">${money(x.tax)}</td>
+      <td class="money">${money(x.cumTax)}</td><td class="money">${x.bonusTax ? money(x.bonusTax) : "—"}</td>
+    </tr>`).join("");
+    return `<details style="margin:8px 0">
+      <summary style="cursor:pointer; font-size:13.5px; color:var(--sub)">${esc(r.label)} · 12 个月明细</summary>
+      <div style="overflow-x:auto"><table>
+        <tr><th>月份</th><th>当月税前</th><th>累计应纳税所得</th><th>当月个税</th><th>累计个税</th><th>年终奖个税</th></tr>
+        ${rows}
+      </table></div>
+      <div class="chart-note">累计到手现金流（已扣个税与五险一金个人部分；12 月含年终奖/双薪的集中发放）：</div>
+      ${cashChartSVG(r)}
+    </details>`;
+  }).join("");
+
+  const lines = results.map((r, i) =>
+    `${i + 1}. ${r.label}（${r.cityName} ${r.months}薪）：税前 ${money(r.grossAnnual)} → 五险一金 -${money(r.personalTotal)} → 个税 -${money(r.taxSalary + r.taxBonus)} → 税后年总包 ${money(r.netAnnual)}（月均到手 ${money(r.netMonthlyAvg)}）`
+  );
+  document.getElementById("shareText").value =
+    "【Offer 对比结果】\n" + lines.join("\n") + "\n\n口径：年终奖默认单独计税；社保基数以当地人社局公布为准。\n由「Offer 对比计算器」生成（纯本地计算，无隐私风险）";
+  document.getElementById("shareText").classList.add("hidden");
+  save();
+}
+
+/* ---------------- 盲区表 ---------------- */
+function renderZoneTable() {
+  const edges = [36000, 144000, 300000, 420000, 660000];
+  const rows = edges.map(e => {
+    const z = bonusBlindZone(e + 1);
+    return `<tr><td>${money(z.edge)}</td><td>${money(z.ceiling)}</td><td>年终奖在此区间时，不如就发 ${money(z.edge)} 元（税后更多）</td></tr>`;
+  });
+  document.getElementById("zoneTable").innerHTML =
+    `<tr><th>临界点（元）</th><th>盲区上限（元）</th><th>说明</th></tr>` + rows.join("");
+}
+
+/* ---------------- 事件 ---------------- */
+document.getElementById("addOffer").addEventListener("click", () => {
+  if (offers.length >= 3) { alert("最多对比 3 个 Offer"); return; }
+  const base = JSON.parse(JSON.stringify(offers[offers.length - 1] || DEFAULT_OFFERS[0]));
+  // 标签去重：优先用未被占用的字母，避免删除后重建时出现重名
+  const used = new Set(offers.map(o => o.label));
+  let label;
+  for (const ch of "ABC") { const cand = "Offer " + ch; if (!used.has(cand)) { label = cand; break; } }
+  base.label = label || ("Offer " + (offers.length + 1));
+  offers.push(base); save(); renderOffers();
+});
+document.getElementById("calc").addEventListener("click", calc);
+document.getElementById("reset").addEventListener("click", () => {
+  offers = JSON.parse(JSON.stringify(DEFAULT_OFFERS)); save(); renderOffers(); calc();
+});
+document.getElementById("copyBtn").addEventListener("click", () => {
+  const ta = document.getElementById("shareText");
+  ta.classList.remove("hidden"); ta.select();
+  try { document.execCommand("copy"); } catch (e) {}
+  if (navigator.clipboard) navigator.clipboard.writeText(ta.value).catch(() => {});
+  document.getElementById("copyBtn").textContent = "已复制 ✓";
+  setTimeout(() => { document.getElementById("copyBtn").textContent = "复制对比结果（文本）"; }, 1600);
+});
+document.getElementById("shareLinkBtn").addEventListener("click", () => {
+  const url = location.href.split("#")[0] + "#d=" + encodeOffers(offers);
+  try { history.replaceState(null, "", url); } catch (e) { location.hash = "#d=" + encodeOffers(offers); }
+  const done = () => {
+    document.getElementById("shareLinkBtn").textContent = "已复制 ✓";
+    setTimeout(() => { document.getElementById("shareLinkBtn").textContent = "复制分享链接"; }, 1600);
+  };
+  if (navigator.clipboard) navigator.clipboard.writeText(url).then(done).catch(done);
+  else { const i = document.createElement("input"); i.value = url; document.body.appendChild(i); i.select(); try { document.execCommand("copy"); } catch (e) {} i.remove(); done(); }
+});
+
+renderOffers();
+renderZoneTable();
+calc();
+</script>
+</body>
+</html>
